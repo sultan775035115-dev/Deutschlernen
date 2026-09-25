@@ -89,7 +89,7 @@ class WordCardRepositoryImpl(
 
     override suspend fun toggleFavorite(id: Long, currentStatus: Boolean) {
         withContext(ioDispatcher) {
-            dao.updateFavoriteStatus(id, !currentStatus)
+            dao.updateFavoriteStatus(id, !currentStatus, System.currentTimeMillis())
         }
     }
 
@@ -99,14 +99,15 @@ class WordCardRepositoryImpl(
                 id = id,
                 level = nextLevel,
                 lastReviewedAt = System.currentTimeMillis(),
-                nextReviewAt = nextReviewAt
+                nextReviewAt = nextReviewAt,
+                updatedAt = System.currentTimeMillis()
             )
         }
     }
 
     override suspend fun snoozeReview(id: Long, snoozeUntil: Long) {
         withContext(ioDispatcher) {
-            dao.updateNextReviewTime(id, snoozeUntil)
+            dao.updateNextReviewTime(id, snoozeUntil, System.currentTimeMillis())
         }
     }
 }

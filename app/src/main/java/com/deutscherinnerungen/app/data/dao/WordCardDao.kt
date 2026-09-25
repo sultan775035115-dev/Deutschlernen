@@ -55,7 +55,7 @@ interface WordCardDao {
     suspend fun deleteAllCards()
 
     @Query("UPDATE word_cards SET isFavorite = :isFavorite, updatedAt = :updatedAt WHERE id = :id")
-    suspend fun updateFavoriteStatus(id: Long, isFavorite: Boolean, updatedAt: Long = System.currentTimeMillis())
+    suspend fun updateFavoriteStatus(id: Long, isFavorite: Boolean, updatedAt: Long)
 
     @Query("UPDATE word_cards SET reviewLevel = :level, lastReviewedAt = :lastReviewedAt, nextReviewAt = :nextReviewAt, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateReviewProgress(
@@ -63,16 +63,16 @@ interface WordCardDao {
         level: Int,
         lastReviewedAt: Long,
         nextReviewAt: Long,
-        updatedAt: Long = System.currentTimeMillis()
+        updatedAt: Long
     )
 
     @Query("UPDATE word_cards SET nextReviewAt = :nextReviewAt, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateNextReviewTime(
         id: Long,
         nextReviewAt: Long,
-        updatedAt: Long = System.currentTimeMillis()
+        updatedAt: Long
     )
 
     @Query("UPDATE word_cards SET reminderEnabled = :enabled, updatedAt = :updatedAt WHERE id = :id")
-    suspend fun updateReminderStatus(id: Long, enabled: Boolean, updatedAt: Long = System.currentTimeMillis())
+    suspend fun updateReminderStatus(id: Long, enabled: Boolean, updatedAt: Long)
 }
