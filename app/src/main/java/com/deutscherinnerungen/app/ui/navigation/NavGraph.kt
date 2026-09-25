@@ -56,6 +56,9 @@ fun NavGraph(
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onSpeakWord = { word ->
+                    app.ttsHelper.speak(word)
                 }
             )
         }
@@ -88,6 +91,9 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEdit = { editCardId ->
                     navController.navigate(Screen.AddEditCard.createRoute(editCardId))
+                },
+                onSpeakWord = { word ->
+                    app.ttsHelper.speak(word)
                 }
             )
         }

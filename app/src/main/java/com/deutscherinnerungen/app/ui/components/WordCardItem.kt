@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -48,6 +49,7 @@ fun WordCardItem(
     card: WordCardEntity,
     onClick: () -> Unit,
     onFavoriteToggle: () -> Unit,
+    onSpeak: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val isDue = card.nextReviewAt <= System.currentTimeMillis()
@@ -185,18 +187,36 @@ fun WordCardItem(
                 }
             }
 
-            // زر المفضلة
-            IconButton(
-                onClick = onFavoriteToggle,
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-            ) {
-                Icon(
-                    imageVector = if (card.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = if (card.isFavorite) "إزالة من المفضلة" else "إضافة للمفضلة",
-                    tint = if (card.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onSpeak != null) {
+                    IconButton(
+                        onClick = onSpeak,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VolumeUp,
+                            contentDescription = "استماع للنطق",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                // زر المفضلة
+                IconButton(
+                    onClick = onFavoriteToggle,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                ) {
+                    Icon(
+                        imageVector = if (card.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (card.isFavorite) "إزالة من المفضلة" else "إضافة للمفضلة",
+                        tint = if (card.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

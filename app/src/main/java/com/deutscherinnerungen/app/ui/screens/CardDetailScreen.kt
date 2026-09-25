@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -77,7 +78,8 @@ import java.io.File
 fun CardDetailScreen(
     viewModel: CardDetailViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToEdit: (Long) -> Unit
+    onNavigateToEdit: (Long) -> Unit,
+    onSpeakWord: ((String) -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -290,12 +292,34 @@ fun CardDetailScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // الكلمة الأساسية
-                        Text(
-                            text = card.word,
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        // الكلمة الأساسية مع زر النطق الصوتي التلقائي (TTS)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = card.word,
+                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (onSpeakWord != null) {
+                                IconButton(
+                                    onClick = { onSpeakWord(card.word) },
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.VolumeUp,
+                                        contentDescription = "استماع للنطق الصوتي",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(8.dp))
 

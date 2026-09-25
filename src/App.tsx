@@ -149,10 +149,28 @@ export default function App() {
   const [allRemindersEnabled, setAllRemindersEnabled] = useState(true);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [showSnoozeModal, setShowSnoozeModal] = useState(false);
+  const [activeRichNotification, setActiveRichNotification] = useState<{
+    cardId: number;
+    word: string;
+    meaning: string;
+  } | null>(null);
+
+  // نطق الكلمة عبر محرك Text-to-Speech
+  const speakWord = (text: string) => {
+    if (!('speechSynthesis' in window)) {
+      showToast('المتصفح لا يدعم محرك النطق الصوتي الآلي');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'de-DE';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+    showToast(`🔊 نطق آلي (TTS): ${text}`);
+  };
+
   const [notificationToast, setNotificationToast] = useState<string | null>(null);
   const [isExportingZip, setIsExportingZip] = useState(false);
-
-  // ملفات كود أندرويد المعروضة
   const [selectedFileKey, setSelectedFileKey] = useState<string>('MainActivity');
   const [copiedFile, setCopiedFile] = useState(false);
 
@@ -443,6 +461,7 @@ dependencies {
             </intent-filter>
         </activity>
         <receiver android:name=".notifications.AlarmReceiver" android:exported="false" />
+        <receiver android:name=".notifications.NotificationActionReceiver" android:exported="false" />
         <receiver android:name=".notifications.BootReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -462,8 +481,10 @@ dependencies {
       zip.file(`${pkg}/data/database/WordAnchorDatabase.kt`, ANDROID_CODE_FILES['WordAnchorDatabase'].code);
       zip.file(`${pkg}/data/repository/WordCardRepository.kt`, ANDROID_CODE_FILES['WordCardRepository'].code);
       zip.file(`${pkg}/srs/SpacedRepetitionEngine.kt`, ANDROID_CODE_FILES['SpacedRepetitionEngine'].code);
+      zip.file(`${pkg}/tts/TextToSpeechHelper.kt`, ANDROID_CODE_FILES['TextToSpeechHelper'].code);
       zip.file(`${pkg}/notifications/ReminderScheduler.kt`, ANDROID_CODE_FILES['ReminderScheduler'].code);
       zip.file(`${pkg}/notifications/AlarmReceiver.kt`, ANDROID_CODE_FILES['AlarmReceiver'].code);
+      zip.file(`${pkg}/notifications/NotificationActionReceiver.kt`, ANDROID_CODE_FILES['NotificationActionReceiver'].code);
       zip.file(`${pkg}/media/MediaStorageManager.kt`, ANDROID_CODE_FILES['MediaStorageManager'].code);
       zip.file(`${pkg}/backup/BackupManager.kt`, ANDROID_CODE_FILES['BackupManager'].code);
       zip.file(`${pkg}/ui/screens/HomeScreen.kt`, ANDROID_CODE_FILES['HomeScreen'].code);
@@ -668,6 +689,55 @@ dependencies {
                     </div>
                   </div>
 
+                  {/* ================= إشعار أندرويد التفاعلي الذكي (الميزة رقم 7) ================= */}
+                  {activeRichNotification && (
+                    <div className="mx-3 mt-1 mb-2 p-3 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl border border-sky-500/40 shadow-2xl animate-in slide-in-from-top-3 duration-300 z-30">
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                        <span className="flex items-center gap-1 font-semibold text-sky-400">
+                          <span>⚓</span> تثبيت الكلمات • تذكير مراجعة
+                        </span>
+                        <button 
+                          onClick={() => setActiveRichNotification(null)}
+                          className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-slate-800 text-slate-400 hover:text-white"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <h4 className="font-extrabold text-sm text-sky-300 mb-0.5">تذكير: {activeRichNotification.word}</h4>
+                      <p className="text-[11px] text-slate-200 line-clamp-1 mb-2.5">{activeRichNotification.meaning}</p>
+                      
+                      {/* الأزرار التفاعلية الثلاثة */}
+                      <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800 text-[11px] font-bold">
+                        <button 
+                          onClick={() => {
+                            handleMarkReviewed(activeRichNotification.cardId);
+                            setActiveRichNotification(null);
+                          }}
+                          className="py-1 px-1.5 rounded-lg bg-emerald-600/30 text-emerald-300 hover:bg-emerald-600/50 border border-emerald-500/30 text-center transition-colors"
+                        >
+                          تذكرتها 👍
+                        </button>
+                        <button 
+                          onClick={() => {
+                            handleSnooze(activeRichNotification.cardId, 60);
+                            setActiveRichNotification(null);
+                          }}
+                          className="py-1 px-1.5 rounded-lg bg-amber-600/30 text-amber-300 hover:bg-amber-600/50 border border-amber-500/30 text-center transition-colors"
+                        >
+                          نسيتها ❌
+                        </button>
+                        <button 
+                          onClick={() => {
+                            speakWord(activeRichNotification.word);
+                          }}
+                          className="py-1 px-1.5 rounded-lg bg-sky-600/30 text-sky-300 hover:bg-sky-600/50 border border-sky-500/30 text-center flex items-center justify-center gap-1 transition-colors"
+                        >
+                          <span>نطق 🔊</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* ================= شاشات المحاكي ================= */}
                   <div className="flex-1 overflow-y-auto pb-6">
                     
@@ -680,10 +750,26 @@ dependencies {
                             <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">تثبيت الكلمات</h2>
                             <p className="text-[11px] text-slate-500">الذاكرة طويلة المدى</p>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                const target = cards[0] || { id: 1, word: 'Ausgezeichnet', meaning: 'ممتاز / فائق الروعة' };
+                                setActiveRichNotification({
+                                  cardId: target.id,
+                                  word: target.word,
+                                  meaning: target.meaning
+                                });
+                                showToast('🔔 تم إرسال إشعار أندرويد الذكي! جرّب التفاعل معه في أعلى الهاتف');
+                              }}
+                              className="px-2.5 py-1 rounded-full bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 hover:bg-sky-200 dark:hover:bg-sky-900 text-[10px] font-bold flex items-center gap-1 border border-sky-300 dark:border-sky-800 transition-colors"
+                              title="محاكاة إشعار أندرويد تفاعلي ذكي"
+                            >
+                              <Bell className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                              <span>إشعار تفاعلي</span>
+                            </button>
                             <button
                               onClick={() => setSimScreen('settings')}
-                              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
+                              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
                               title="الإعدادات"
                             >
                               <Settings className="w-4 h-4" />
@@ -794,15 +880,27 @@ dependencies {
                                       )}
                                     </div>
                                   </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleToggleFavorite(card.id);
-                                    }}
-                                    className="p-1.5 text-slate-400 hover:text-rose-500"
-                                  >
-                                    <Star className={`w-4 h-4 ${card.isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
-                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        speakWord(card.word);
+                                      }}
+                                      className="p-1.5 text-slate-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/60 rounded-full transition-colors"
+                                      title="استماع للنطق الصوتي الآلي (TTS)"
+                                    >
+                                      <Volume2 className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleFavorite(card.id);
+                                      }}
+                                      className="p-1.5 text-slate-400 hover:text-rose-500"
+                                    >
+                                      <Star className={`w-4 h-4 ${card.isFavorite ? 'fill-rose-500 text-rose-500' : ''}`} />
+                                    </button>
+                                  </div>
                                 </div>
                               );
                             })
@@ -854,9 +952,19 @@ dependencies {
                             </span>
                           </div>
 
-                          <h2 className="text-2xl font-black text-sky-700 dark:text-sky-400">
-                            {selectedCard.word}
-                          </h2>
+                          <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-black text-sky-700 dark:text-sky-400">
+                              {selectedCard.word}
+                            </h2>
+                            <button
+                              onClick={() => speakWord(selectedCard.word)}
+                              className="px-3 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 dark:bg-sky-900/60 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-300 flex items-center gap-1.5 text-xs font-bold transition-all shadow-sm active:scale-95"
+                              title="استماع للنطق الصوتي الآلي (TTS)"
+                            >
+                              <Volume2 className="w-4 h-4" />
+                              <span>نطق آلي</span>
+                            </button>
+                          </div>
 
                           <p className="text-sm font-medium text-slate-800 dark:text-slate-200 leading-relaxed">
                             {selectedCard.meaning}
@@ -1746,6 +1854,122 @@ class AlarmReceiver : BroadcastReceiver() {
                 }
             } finally {
                 pendingResult.finish()
+            }
+        }
+    }
+}`
+  },
+
+  TextToSpeechHelper: {
+    path: 'app/src/main/java/com/deutscherinnerungen/app/tts/TextToSpeechHelper.kt',
+    fileName: 'TextToSpeechHelper.kt',
+    layer: 'TTS / Audio',
+    purpose: 'محرك النطق الصوتي الآلي المدمج (TextToSpeech) مع ضبط اللغات التلقائي (الألمانية de-DE والإنجليزية en-US) للفظ الكلمات فورياً دون ملفات مسبقة.',
+    code: `package com.deutscherinnerungen.app.tts
+
+import android.content.Context
+import android.speech.tts.TextToSpeech
+import java.util.Locale
+
+class TextToSpeechHelper(private val context: Context) : TextToSpeech.OnInitListener {
+    private var textToSpeech: TextToSpeech? = null
+    private var isReady = false
+
+    init {
+        textToSpeech = TextToSpeech(context.applicationContext, this)
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            val result = textToSpeech?.setLanguage(Locale.GERMAN)
+            isReady = (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED)
+            if (!isReady) textToSpeech?.setLanguage(Locale.ENGLISH)
+        }
+    }
+
+    fun speak(text: String, locale: Locale = Locale.GERMAN) {
+        if (text.isBlank()) return
+        textToSpeech?.language = locale
+        textToSpeech?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "WordAnchor_TTS")
+    }
+
+    fun shutdown() {
+        textToSpeech?.stop()
+        textToSpeech?.shutdown()
+        textToSpeech = null
+    }
+}`
+  },
+
+  NotificationActionReceiver: {
+    path: 'app/src/main/java/com/deutscherinnerungen/app/notifications/NotificationActionReceiver.kt',
+    fileName: 'NotificationActionReceiver.kt',
+    layer: 'Notifications / Actions',
+    purpose: 'مستقبل التفاعل السريع مع الإشعارات الذكية: ينفذ إجراءات (تذكرتها / نسيتها / نطق) مباشرة من شريط الإشعارات دون فتح التطبيق.',
+    code: `package com.deutscherinnerungen.app.notifications
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
+import com.deutscherinnerungen.app.data.database.WordAnchorDatabase
+import com.deutscherinnerungen.app.data.repository.WordCardRepositoryImpl
+import com.deutscherinnerungen.app.srs.SpacedRepetitionEngine
+import com.deutscherinnerungen.app.tts.TextToSpeechHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+class NotificationActionReceiver : BroadcastReceiver() {
+    companion object {
+        const val ACTION_REMEMBERED = "com.deutscherinnerungen.app.ACTION_REMEMBERED"
+        const val ACTION_FORGOT = "com.deutscherinnerungen.app.ACTION_FORGOT"
+        const val ACTION_SPEAK = "com.deutscherinnerungen.app.ACTION_SPEAK"
+        const val EXTRA_CARD_ID = "extra_card_id"
+        const val EXTRA_WORD = "extra_word"
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        val cardId = intent.getLongExtra(EXTRA_CARD_ID, -1L)
+        val word = intent.getStringExtra(EXTRA_WORD) ?: ""
+        val notificationHelper = NotificationHelper(context)
+
+        when (intent.action) {
+            ACTION_REMEMBERED -> {
+                notificationHelper.cancelNotification(cardId)
+                val pending = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val db = WordAnchorDatabase.getInstance(context)
+                        val repo = WordCardRepositoryImpl(db.wordCardDao())
+                        val card = repo.getCardById(cardId)
+                        if (card != null) {
+                            val res = SpacedRepetitionEngine.calculateNextReview(card.reviewLevel)
+                            repo.markReviewed(cardId, res.nextLevel, res.nextReviewAt)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "تم تثبيت ($word) والارتقاء للمستوى التالي 🎯", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } finally { pending.finish() }
+                }
+            }
+            ACTION_FORGOT -> {
+                notificationHelper.cancelNotification(cardId)
+                val pending = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val db = WordAnchorDatabase.getInstance(context)
+                        val repo = WordCardRepositoryImpl(db.wordCardDao())
+                        repo.snoozeReview(cardId, System.currentTimeMillis() + 3600000)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "تمت إعادة جدولة ($word) للمراجعة بعد ساعة ⏳", Toast.LENGTH_SHORT).show()
+                        }
+                    } finally { pending.finish() }
+                }
+            }
+            ACTION_SPEAK -> {
+                TextToSpeechHelper(context.applicationContext).speak(word)
             }
         }
     }

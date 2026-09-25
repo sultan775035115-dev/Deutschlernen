@@ -68,6 +68,44 @@ class NotificationHelper(private val context: Context) {
             pendingIntentFlag
         )
 
+        // إجراء 1: تذكرتها (ترقية المستوى وحفظ التقدم)
+        val rememberedIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_REMEMBERED
+            putExtra(NotificationActionReceiver.EXTRA_CARD_ID, cardId)
+            putExtra(NotificationActionReceiver.EXTRA_WORD, word)
+        }
+        val rememberedPendingIntent = PendingIntent.getBroadcast(
+            context,
+            (cardId * 10 + 1).toInt(),
+            rememberedIntent,
+            pendingIntentFlag
+        )
+
+        // إجراء 2: نسيتها (إعادة جدولة بعد ساعة)
+        val forgotIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_FORGOT
+            putExtra(NotificationActionReceiver.EXTRA_CARD_ID, cardId)
+            putExtra(NotificationActionReceiver.EXTRA_WORD, word)
+        }
+        val forgotPendingIntent = PendingIntent.getBroadcast(
+            context,
+            (cardId * 10 + 2).toInt(),
+            forgotIntent,
+            pendingIntentFlag
+        )
+
+        // إجراء 3: نطق صوتي مباشر
+        val speakIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_SPEAK
+            putExtra(NotificationActionReceiver.EXTRA_WORD, word)
+        }
+        val speakPendingIntent = PendingIntent.getBroadcast(
+            context,
+            (cardId * 10 + 3).toInt(),
+            speakIntent,
+            pendingIntentFlag
+        )
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("تذكير: $word")
@@ -81,6 +119,9 @@ class NotificationHelper(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .addAction(0, "تذكرتها 👍", rememberedPendingIntent)
+            .addAction(0, "نسيتها ❌", forgotPendingIntent)
+            .addAction(0, "نطق 🔊", speakPendingIntent)
             .build()
 
         try {

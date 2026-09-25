@@ -59,7 +59,8 @@ fun HomeScreen(
     viewModel: CardsViewModel,
     onNavigateToAddCard: () -> Unit,
     onNavigateToCardDetail: (Long) -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onSpeakWord: ((String) -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
     var isSearchVisible by remember { mutableStateOf(false) }
@@ -248,7 +249,8 @@ fun HomeScreen(
                         WordCardItem(
                             card = card,
                             onClick = { onNavigateToCardDetail(card.id) },
-                            onFavoriteToggle = { viewModel.toggleFavorite(card) }
+                            onFavoriteToggle = { viewModel.toggleFavorite(card) },
+                            onSpeak = if (onSpeakWord != null) { { onSpeakWord(card.word) } } else null
                         )
                     }
                 }

@@ -49,6 +49,12 @@
             android:enabled="true"
             android:exported="false" />
 
+        <!-- مستقبل الإجراءات التفاعلية داخل الإشعار (تذكرتها / نسيتها / نطق) -->
+        <receiver
+            android:name=".notifications.NotificationActionReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
         <!-- مستقبل إعادة تشغيل الجهاز وتحديث الوقت لإعادة جدولة التذكيرات -->
         <receiver
             android:name=".notifications.BootReceiver"

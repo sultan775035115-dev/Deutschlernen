@@ -17,10 +17,17 @@ class WordAnchorApp : Application() {
     val notificationHelper by lazy { NotificationHelper(this) }
     val reminderScheduler by lazy { ReminderScheduler(this) }
     val settingsRepository by lazy { SettingsRepository(this) }
+    val ttsHelper by lazy { com.deutscherinnerungen.app.tts.TextToSpeechHelper(this) }
 
     override fun onCreate() {
         super.onCreate()
-        // تهيئة قنوات الإشعارات
+        // تهيئة قنوات الإشعارات ومحرك النطق
         notificationHelper
+        ttsHelper
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        ttsHelper.shutdown()
     }
 }
