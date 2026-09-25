@@ -279,27 +279,31 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Ensure Gradle Wrapper Jar and Permissions
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle 8.4
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
+
+      - name: Prepare Gradle Wrapper
         run: |
-          mkdir -p gradle/wrapper
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ] || [ ! -s gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "Downloading gradle-wrapper.jar via curl..."
-            curl -sSL -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
-          fi
+          gradle wrapper --gradle-version 8.4
           sed -i 's/\\r$//' gradlew || true
           chmod +x gradlew
 
       - name: Build Debug APK with Gradle
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
-        if: success()
+        if: always()
         with:
           name: WordAnchor-debug-apk
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
           retention-days: 14`);
 
       zip.file("build.gradle.kts", `plugins {
