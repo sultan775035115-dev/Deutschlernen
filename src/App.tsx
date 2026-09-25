@@ -305,8 +305,13 @@ jobs:
       - name: Build Debug APK with Gradle
         run: |
           export PATH="/opt/gradle/gradle-8.4/bin:$PATH"
-          echo "=== Starting APK Build ==="
-          ./gradlew assembleDebug --no-daemon --stacktrace || gradle assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build_output.log || {
+            echo "=================================================="
+            echo "             DETAILED COMPILATION ERRORS          "
+            echo "=================================================="
+            grep -E "^e: " build_output.log || tail -n 80 build_output.log
+            exit 1
+          }
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
