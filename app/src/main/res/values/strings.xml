@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">تثبيت الكلمات</string>
+    <string name="app_name_en">Word Anchor</string>
+    <string name="notification_channel_name">تذكيرات مراجعة الكلمات</string>
+    <string name="notification_channel_description">إشعارات تذكيرية لتثبيت الكلمات والعبارات في الذاكرة عبر التكرار المتباعد</string>
+    <string name="notification_title_reminder">حان وقت مراجعة الكلمة!</string>
+    <string name="action_open_card">فتح البطاقة</string>
+</resources>

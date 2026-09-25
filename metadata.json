@@ -1,0 +1,6 @@
+{
+  "name": "تثبيت الكلمات — Word Anchor",
+  "description": "تطبيق أندرويد متكامل لتثبيت الكلمات والعبارات بالذاكرة باستخدام التكرار المتباعد Spaced Repetition ونظام التذكيرات وقاعدة بيانات Room.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
