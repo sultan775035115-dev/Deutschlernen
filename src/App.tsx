@@ -261,6 +261,10 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+concurrency:
+  group: \${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build Debug APK
@@ -275,30 +279,24 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: gradle
 
-      - name: Setup Gradle 8.4
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.4'
-
-      - name: Fix Line Endings and Permissions
+      - name: Ensure Gradle Wrapper Jar and Permissions
         run: |
+          mkdir -p gradle/wrapper
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ] || [ ! -s gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "Downloading gradle-wrapper.jar via curl..."
+            curl -sSL -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.4.0/gradle/wrapper/gradle-wrapper.jar
+          fi
           sed -i 's/\\r$//' gradlew || true
           chmod +x gradlew
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "Regenerating wrapper jar..."
-            gradle wrapper --gradle-version 8.4
-          fi
 
-      - name: Accept Android SDK Licenses
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-
-      - name: Build with Gradle
+      - name: Build Debug APK with Gradle
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: WordAnchor-debug-apk
           path: app/build/outputs/apk/debug/*.apk
@@ -330,6 +328,7 @@ include(":app")`);
       zip.file("gradle.properties", `org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
 android.useAndroidX=true
 android.nonTransitiveRClass=true
+android.builder.sdkDownload=true
 kotlin.code.style=official
 org.gradle.caching=true
 org.gradle.parallel=true`);
