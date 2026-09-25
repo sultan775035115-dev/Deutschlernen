@@ -26,22 +26,33 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Setup Gradle 8.4
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.4'
-
-      - name: Prepare Gradle Wrapper
+      - name: Install Official Gradle 8.4 Engine
         run: |
-          gradle wrapper --gradle-version 8.4
+          echo "=== Downloading Gradle 8.4 ==="
+          curl -sSL https://services.gradle.org/distributions/gradle-8.4-bin.zip -o /tmp/gradle-8.4-bin.zip
+          sudo unzip -q -o /tmp/gradle-8.4-bin.zip -d /opt/gradle
+          echo "/opt/gradle/gradle-8.4/bin" >> $GITHUB_PATH
+          export PATH="/opt/gradle/gradle-8.4/bin:$PATH"
+          gradle -v
+
+      - name: Generate Fresh Gradle Wrapper
+        run: |
+          export PATH="/opt/gradle/gradle-8.4/bin:$PATH"
+          echo "=== Generating Wrapper ==="
+          gradle wrapper --gradle-version 8.4 --distribution-type bin
           sed -i 's/\r$//' gradlew || true
           chmod +x gradlew
+          ls -la gradle/wrapper/
+
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build Debug APK with Gradle
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: |
+          export PATH="/opt/gradle/gradle-8.4/bin:$PATH"
+          echo "=== Starting APK Build ==="
+          ./gradlew assembleDebug --no-daemon --stacktrace || gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
